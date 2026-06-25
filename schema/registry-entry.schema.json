@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemacommons.org/SC-013/registry-entry.schema.json",
+  "title": "AREG Registry Entry",
+  "description": "Schema Commons SC-013 — Agent Registry (AREG) v0.1.0. A registry entry records that a specific version of an AAIF-format agent definition is available for discovery and resolution.",
+  "type": "object",
+  "required": ["sc_standard", "sc_version", "registry_id", "agent_id", "agent_version", "published_at", "publisher", "aaif_url"],
+  "additionalProperties": false,
+  "properties": {
+    "sc_standard": {
+      "type": "string",
+      "const": "SC-013",
+      "description": "Must be the string 'SC-013'. Identifies this document as an AREG registry entry."
+    },
+    "sc_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "AREG schema version (SemVer). Current: 0.1.0."
+    },
+    "registry_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Stable UUID assigned by the registry at publish time. Never changes across version bumps of the same entry."
+    },
+    "agent_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The AAIF agent_id from the referenced agent definition. Must match the agent_id field in the AAIF document at aaif_url."
+    },
+    "agent_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "SemVer version of the agent definition. Must match the version field in the AAIF document."
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC datetime when this registry entry was first published."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC datetime of the most recent metadata update to this entry (not the agent version)."
+    },
+    "publisher": {
+      "type": "object",
+      "description": "Identity of the party publishing this registry entry.",
+      "required": ["name", "url"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "description": "Human-readable publisher name." },
+        "url": { "type": "string", "format": "uri", "description": "Publisher's canonical URL." },
+        "public_key_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to the publisher's JWK Set or PEM public key, used to verify the signature field."
+        },
+        "contact": { "type": "string", "description": "Contact email or URI for abuse/security reports." }
+      }
+    },
+    "aaif_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Resolvable URL where the full AAIF agent definition document can be fetched. Must return a valid AAIF document with matching agent_id and agent_version."
+    },
+    "signature": {
+      "type": ["string", "null"],
+      "description": "Base64url-encoded detached JWS signature over the canonical JSON of the AAIF document at aaif_url. Verifiable using the public key at publisher.public_key_url. Null for unsigned entries."
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true,
+      "description": "Free-form topic tags for search and discovery. Lowercase, hyphenated preferred."
+    },
+    "conformance_level": {
+      "type": "string",
+      "enum": ["Core", "Tooled", "Portable", "Multi-agent", "Observable", "Enterprise", "Stateful"],
+      "description": "Highest AAIF conformance level the agent claims, as declared in its AAIF document."
+    },
+    "required_capabilities": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Copy of required_capabilities[] from the AAIF agent definition. Allows filtering without fetching the full AAIF document."
+    },
+    "acpm_profile_url": {
+      "type": ["string", "null"],
+      "format": "uri",
+      "description": "Optional URL to an ACPM (SC-014) capability profile document that further describes what this agent offers. Null if no profile is published."
+    },
+    "yanked": {
+      "type": "boolean",
+      "default": false,
+      "description": "If true, this version has been retracted. The entry remains in the registry but MUST NOT be used for new deployments."
+    },
+    "yank_reason": {
+      "type": ["string", "null"],
+      "description": "Human-readable reason for yanking. Null if not yanked."
+    },
+    "license": {
+      "type": "string",
+      "description": "SPDX license identifier for the agent definition document itself."
+    },
+    "_comment": {
+      "type": "string",
+      "description": "Non-normative comment for documentation purposes. Stripped before validation."
+    }
+  },
+  "$defs": {}
+}
