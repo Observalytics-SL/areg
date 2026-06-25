@@ -11,6 +11,14 @@ authors:
 license: CC-BY-4.0
 repository-code: https://github.com/Observalytics-SL/areg
 url: https://schemacommons.org/SC-013
+doi: "10.5281/zenodo.20845322"
+identifiers:
+  - type: other
+    value: "SC-013"
+    description: "Schema Commons standard identifier."
+  - type: doi
+    value: "10.5281/zenodo.20845322"
+    description: "Zenodo archived release DOI."
 abstract: >
   The Agent Registry (AREG) is a Schema Commons open standard defining a
   machine-readable registry entry format and REST API for publishing, discovering,

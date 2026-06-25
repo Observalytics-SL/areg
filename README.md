@@ -1,6 +1,6 @@
 # SC-013 · AREG — Agent Registry
 
-[![Schema Commons Standard](assets/schema-commons-badge.svg)](https://github.com/Observalytics-SL) ![Status: Proposed](https://img.shields.io/badge/status-proposed-lightgrey) [![Cite](https://img.shields.io/badge/cite-CITATION.cff-blue)](CITATION.cff)
+[![Schema Commons Standard](assets/schema-commons-badge.svg)](https://github.com/Observalytics-SL) ![Status: Proposed](https://img.shields.io/badge/status-proposed-lightgrey) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20845322.svg)](https://doi.org/10.5281/zenodo.20845322) [![Cite](https://img.shields.io/badge/cite-CITATION.cff-blue)](CITATION.cff)
 
 > **Publish, discover, and resolve AAIF agents.** [SC-006 AAIF](https://github.com/Observalytics-SL/aaif) defines how to *run* a portable agent. [SC-014 ACPM](https://github.com/Observalytics-SL/acpm) defines what it *offers*. AREG defines where to *find* it — the registry and discovery layer for the AAIF ecosystem.
 
