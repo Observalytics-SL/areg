@@ -9,7 +9,7 @@ authors:
     affiliation: Observalytics SL
     email: bob@observalytics.com
 license: CC-BY-4.0
-repository-code: https://github.com/Observalytics-SL/arp
+repository-code: https://github.com/Observalytics-SL/areg
 url: https://schemacommons.org/SC-013
 abstract: >
   The Agent Registry (AREG) is a Schema Commons open standard defining a
