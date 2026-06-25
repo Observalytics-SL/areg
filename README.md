@@ -73,18 +73,5 @@ python3 tools/validate.py
 
 An AREG registry entry carries the agent_id (from AAIF), an optional acpm_profile_url (to ACPM), and the required_capabilities[] copied from the AAIF document — enabling capability-based search without fetching the full definition for every result.
 
-## 📣 Ready-to-post LinkedIn announcement
-
-> AI agents are becoming portable — but there's no standard place to publish them.
->
-> We just proposed **AREG (SC-013)** — the Agent Registry standard for the AAIF ecosystem. A lightweight JSON document that records where an agent lives, who published it, what version it is, and how to verify its authenticity.
->
-> Together with **AAIF (SC-006)** (what an agent *is*) and **ACPM (SC-014)** (what it *offers*), the Schema Commons agent stack now covers the full portability lifecycle: define → profile → discover.
->
-> Early-stage, zero adopters, fully open. Help shape it.
->
-> Part of **Schema Commons** — the Creative Commons for data schemas.
->
-> #AIagents #OpenStandards #SchemaCommons #MultiAgent #AgentRegistry
 
 *Licensed CC BY 4.0 — part of [Schema Commons](https://github.com/Observalytics-SL).*
