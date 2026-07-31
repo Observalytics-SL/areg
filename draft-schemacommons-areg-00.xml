@@ -1,0 +1,1238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE rfc [
+  <!ENTITY nbsp    "&#160;">
+]>
+<rfc xmlns:xi="http://www.w3.org/2001/XInclude"
+     category="info"
+     docName="draft-schemacommons-areg-00"
+     ipr="trust200902"
+     submissionType="independent"
+     xml:lang="en"
+     version="3">
+
+  <front>
+    <title abbrev="AREG">Agent Registry (AREG)</title>
+    <seriesInfo name="Internet-Draft" value="draft-schemacommons-areg-00"/>
+
+    <author initials="B." surname="van Bussel" fullname="Bob van Bussel">
+      <organization>Observalytics SL</organization>
+      <address>
+        <email>bob@observalytics.com</email>
+        <uri>https://schemacommons.org</uri>
+      </address>
+    </author>
+
+    <date year="2026" month="June" day="25"/>
+    <area>ART</area>
+
+    <keyword>AI agents</keyword>
+    <keyword>agent registry</keyword>
+    <keyword>agent discovery</keyword>
+    <keyword>agent portability</keyword>
+    <keyword>JSON Schema</keyword>
+    <keyword>JWS</keyword>
+    <keyword>interoperability</keyword>
+
+    <abstract>
+      <t>
+        The Agent Registry (AREG) is an open, vendor-neutral specification
+        for publishing, discovering, and resolving artificial intelligence
+        (AI) agent definitions.  An AREG registry entry is a lightweight
+        metadata document that records where a specific version of an
+        agent definition can be fetched, who published it, what version
+        it is, and how consumers can verify its authenticity.  AREG also
+        defines a REST API that conforming registry servers implement to
+        expose search, resolution, and publication endpoints to consumers
+        and publishers.
+      </t>
+      <t>
+        AREG is the discovery and registry layer of the Schema Commons
+        agent stack.  It is designed to compose with the Autonomous Agent
+        Interchange Format (AAIF, SC-006), which defines the content of
+        the agent definition document that an AREG entry points to, and
+        with the Agent Capability and Profile Model (ACPM, SC-014), which
+        provides richer capability, trust, cost, and service-level
+        information that a registry entry can reference.  Neither AAIF
+        nor ACPM is required for a conforming AREG implementation.
+      </t>
+    </abstract>
+  </front>
+
+  <middle>
+
+    <!-- ============================================================ -->
+    <section anchor="introduction" numbered="true" toc="default">
+      <name>Introduction</name>
+      <t>
+        A portable AI agent definition is only as useful as the
+        infrastructure that lets others find it.  Today, agents are
+        shared by hard-coded URLs, proprietary marketplace databases,
+        or not at all.  There is no standard vocabulary for expressing
+        that a specific version of an agent has been published, who
+        is responsible for it, whether it has been retracted, or how
+        to verify that the definition a consumer fetches is the same
+        one the publisher intended to distribute.
+      </t>
+      <t>
+        This document specifies the Agent Registry (AREG): a registry
+        entry document format and a REST API for registry servers.
+        Together they provide a common, interoperable foundation for
+        agent discovery across registries, orchestration platforms, and
+        toolchains, without requiring a central registry authority.
+      </t>
+      <t>
+        AREG is the third member of the Schema Commons agent stack.
+        The Autonomous Agent Interchange Format (AAIF)
+        <xref target="SC-006"/> defines how to express a portable agent
+        definition that any conforming runtime can execute.  The Agent
+        Capability and Profile Model (ACPM) <xref target="SC-014"/>
+        defines how to describe what an agent, platform, tool, or model
+        offers in terms of capabilities, trust, cost, and service level.
+        AREG defines where to find a published agent and how to
+        establish that the definition at a given URL has not been
+        tampered with.
+      </t>
+
+      <section anchor="requirements-language" numbered="true" toc="default">
+        <name>Requirements Language</name>
+        <t>
+          The key words "<bcp14>MUST</bcp14>", "<bcp14>MUST NOT</bcp14>",
+          "<bcp14>REQUIRED</bcp14>", "<bcp14>SHALL</bcp14>",
+          "<bcp14>SHALL NOT</bcp14>", "<bcp14>SHOULD</bcp14>",
+          "<bcp14>SHOULD NOT</bcp14>", "<bcp14>RECOMMENDED</bcp14>",
+          "<bcp14>NOT RECOMMENDED</bcp14>", "<bcp14>MAY</bcp14>", and
+          "<bcp14>OPTIONAL</bcp14>" in this document are to be
+          interpreted as described in BCP 14 <xref target="RFC2119"/>
+          <xref target="RFC8174"/> when, and only when, they appear in
+          all capitals, as shown here.
+        </t>
+      </section>
+
+      <section anchor="scope" numbered="true" toc="default">
+        <name>Scope</name>
+        <t>
+          AREG is in scope for: the registry entry document format;
+          the REST API that registry servers implement; the signing
+          model used to verify that a fetched agent definition has not
+          been modified since publication; versioning semantics for
+          entries; and yanking (soft retraction) semantics.
+        </t>
+        <t>
+          AREG is out of scope for: the content of the agent definition
+          document at the entry's resolution URL (that is defined by
+          AAIF <xref target="SC-006"/>); capability, trust, cost, and
+          service-level description of the agent or registry server
+          (that is defined by ACPM <xref target="SC-014"/>); transport
+          security configuration; billing and rate limiting above and
+          beyond what this specification mandates.
+        </t>
+      </section>
+    </section>
+
+    <!-- ============================================================ -->
+    <section anchor="terminology" numbered="true" toc="default">
+      <name>Terminology</name>
+      <dl newline="false" spacing="normal">
+        <dt>Registry entry</dt>
+        <dd>
+          A JSON instance conforming to the AREG registry entry schema.
+          Describes one published version of one agent.
+        </dd>
+        <dt>Registry</dt>
+        <dd>
+          A server that stores registry entries and exposes them via the
+          AREG REST API defined in <xref target="rest-api"/>.
+        </dd>
+        <dt>Publisher</dt>
+        <dd>
+          The party that submits a registry entry to a registry.
+        </dd>
+        <dt>Consumer</dt>
+        <dd>
+          Software that queries a registry to discover, resolve, or
+          verify agents.
+        </dd>
+        <dt>Agent ID</dt>
+        <dd>
+          The stable UUID identifying one logical agent across all of
+          its published versions.  Carried in both the AAIF document
+          and the registry entry.
+        </dd>
+        <dt>Registry ID</dt>
+        <dd>
+          A UUID assigned by the registry to uniquely identify one
+          specific (agent_id, agent_version) entry.  Stable for the
+          lifetime of that entry.
+        </dd>
+        <dt>Yanked</dt>
+        <dd>
+          An entry that has been retracted by its publisher.  The
+          entry remains in the registry with yanked set to true but
+          <bcp14>MUST NOT</bcp14> be used for new deployments.
+        </dd>
+        <dt>Canonical JSON</dt>
+        <dd>
+          The deterministic byte representation produced by applying
+          RFC 8785 (JSON Canonicalization Scheme)
+          <xref target="RFC8785"/> to a JSON value.
+        </dd>
+        <dt>Conformance level</dt>
+        <dd>
+          One of the four cumulative levels in
+          <xref target="conformance"/> that a registry implementation
+          claims.
+        </dd>
+      </dl>
+    </section>
+
+    <!-- ============================================================ -->
+    <section anchor="design-principles" numbered="true" toc="default">
+      <name>Design Principles</name>
+      <ol spacing="normal">
+        <li>
+          <t>
+            <strong>Entry, not copy.</strong>  A registry entry is a
+            pointer and metadata record.  The authoritative agent
+            definition lives at aaif_url.  The registry does not
+            re-host agent definitions.
+          </t>
+        </li>
+        <li>
+          <t>
+            <strong>Immutable versions.</strong>  Once a
+            (agent_id, agent_version) entry is published, aaif_url,
+            signature, and published_at <bcp14>MUST NOT</bcp14> change.
+            Corrections require a new version.  This makes entries
+            auditable and cacheable.
+          </t>
+        </li>
+        <li>
+          <t>
+            <strong>Soft deletes only.</strong>  Yanking sets yanked
+            to true but preserves the entry.  Consumers can audit what
+            was retracted and why; the record of a version's existence
+            is never erased.
+          </t>
+        </li>
+        <li>
+          <t>
+            <strong>Signature is optional but fully specified.</strong>
+            Not every publisher will sign.  AREG defines the signing
+            model precisely enough that a consumer can verify a
+            signature when one is present, without requiring one.
+          </t>
+        </li>
+        <li>
+          <t>
+            <strong>Public reads, gated writes.</strong>  Discovery
+            is a public good.  All GET endpoints
+            <bcp14>MUST</bcp14> be accessible without authentication.
+            Mutating endpoints <bcp14>MUST</bcp14> require authentication.
+          </t>
+        </li>
+        <li>
+          <t>
+            <strong>Decentralized by design.</strong>  AREG defines
+            no central registry authority.  Any party can operate a
+            conforming registry.  Consumers may query multiple
+            registries and merge results.
+          </t>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ============================================================ -->
+    <section anchor="entry-format" numbered="true" toc="default">
+      <name>Registry Entry Format</name>
+
+      <section anchor="object-model" numbered="true" toc="default">
+        <name>Object Model</name>
+        <t>
+          A registry entry is a flat JSON object.  The following
+          diagram shows its top-level structure (informative):
+        </t>
+        <artwork name="" type="" align="left" alt=""><![CDATA[
+RegistryEntry (root)
+  sc_standard       "SC-013" (required)
+  sc_version        semver (required)
+  registry_id       UUID — assigned by registry
+  agent_id          UUID — from AAIF document (required)
+  agent_version     semver — from AAIF document (required)
+  published_at      date-time — set by registry on POST
+  updated_at        date-time — set by registry on PATCH
+  publisher
+    name            string (required)
+    url             URI (required)
+    public_key_url  URI — JWK Set or PEM endpoint
+    contact         string — abuse/security contact
+  aaif_url          URI (required)
+  signature         compact JWS | null
+  tags[]            string[]
+  conformance_level enum
+  required_capabilities[]  string[]
+  acpm_profile_url  URI | null
+  yanked            boolean (default false)
+  yank_reason       string | null
+  license           string (SPDX ID)
+        ]]></artwork>
+      </section>
+
+      <section anchor="field-definitions" numbered="true" toc="default">
+        <name>Field Definitions</name>
+
+        <section anchor="root-fields" numbered="true" toc="default">
+          <name>Root Fields</name>
+          <dl newline="false" spacing="normal">
+            <dt>sc_standard</dt>
+            <dd>
+              <bcp14>REQUIRED</bcp14>.  The literal string "SC-013".
+              Identifies this document as an AREG registry entry.
+            </dd>
+            <dt>sc_version</dt>
+            <dd>
+              <bcp14>REQUIRED</bcp14>.  The AREG schema version in
+              Semantic Versioning format.  Current value: "0.1.0".
+            </dd>
+            <dt>registry_id</dt>
+            <dd>
+              <bcp14>REQUIRED</bcp14>.  A UUID (RFC 9562
+              <xref target="RFC9562"/>) assigned by the registry at
+              publish time.  <bcp14>MUST NOT</bcp14> change after
+              assignment.
+            </dd>
+            <dt>agent_id</dt>
+            <dd>
+              <bcp14>REQUIRED</bcp14>.  The agent_id UUID from the
+              AAIF document at aaif_url.
+              <bcp14>MUST</bcp14> match the agent_id field in that
+              document.
+            </dd>
+            <dt>agent_version</dt>
+            <dd>
+              <bcp14>REQUIRED</bcp14>.  The version of the agent
+              definition in Semantic Versioning format.
+              <bcp14>MUST</bcp14> match the version field in the AAIF
+              document at aaif_url.
+            </dd>
+            <dt>published_at</dt>
+            <dd>
+              <bcp14>REQUIRED</bcp14>.  ISO 8601 UTC date-time of
+              first publication.  Set by the registry on POST.
+              Publishers <bcp14>MUST NOT</bcp14> supply this field.
+            </dd>
+            <dt>updated_at</dt>
+            <dd>
+              <bcp14>OPTIONAL</bcp14>.  ISO 8601 UTC date-time of the
+              most recent metadata update.  Set by the registry on
+              PATCH.
+            </dd>
+          </dl>
+        </section>
+
+        <section anchor="publisher-object" numbered="true" toc="default">
+          <name>Publisher Object</name>
+          <dl newline="false" spacing="normal">
+            <dt>publisher.name</dt>
+            <dd>
+              <bcp14>REQUIRED</bcp14>.  Human-readable publisher name.
+            </dd>
+            <dt>publisher.url</dt>
+            <dd>
+              <bcp14>REQUIRED</bcp14>.  Publisher's canonical URI.
+            </dd>
+            <dt>publisher.public_key_url</dt>
+            <dd>
+              <bcp14>REQUIRED</bcp14> when signature is non-null.  URI
+              resolving to a JWK Set (RFC 7517 <xref target="RFC7517"/>)
+              with Content-Type application/json, or a PEM file with
+              Content-Type text/plain, containing the public key(s)
+              used to produce the signature value.
+            </dd>
+            <dt>publisher.contact</dt>
+            <dd>
+              <bcp14>OPTIONAL</bcp14>.  Contact email or URI for abuse
+              and security reports.
+            </dd>
+          </dl>
+        </section>
+
+        <section anchor="resolution-fields" numbered="true" toc="default">
+          <name>Resolution Fields</name>
+          <dl newline="false" spacing="normal">
+            <dt>aaif_url</dt>
+            <dd>
+              <bcp14>REQUIRED</bcp14>.  A resolvable URI at which
+              the full AAIF agent definition document can be fetched.
+              <bcp14>MUST</bcp14> return a document whose agent_id
+              and agent_version match the entry.
+            </dd>
+            <dt>signature</dt>
+            <dd>
+              <bcp14>OPTIONAL</bcp14>.  Compact JWS serialization
+              (RFC 7515 <xref target="RFC7515"/>) of a detached
+              signature over the canonical JSON (RFC 8785
+              <xref target="RFC8785"/>) of the AAIF document at
+              aaif_url.  Null for unsigned entries.  See
+              <xref target="signing-model"/>.
+            </dd>
+          </dl>
+        </section>
+
+        <section anchor="discovery-fields" numbered="true" toc="default">
+          <name>Discovery Metadata</name>
+          <dl newline="false" spacing="normal">
+            <dt>tags</dt>
+            <dd>
+              <bcp14>OPTIONAL</bcp14>.  Array of free-form topic
+              strings.  Lowercase hyphenated strings are
+              <bcp14>RECOMMENDED</bcp14>.  Used as an OR-filter
+              in list queries.
+            </dd>
+            <dt>conformance_level</dt>
+            <dd>
+              <bcp14>OPTIONAL</bcp14>.  The highest AAIF conformance
+              level the agent claims, copied from the AAIF document.
+              Allowed values: Core, Tooled, Portable, Multi-agent,
+              Observable, Enterprise, Stateful.
+            </dd>
+            <dt>required_capabilities</dt>
+            <dd>
+              <bcp14>OPTIONAL</bcp14>.  Copy of required_capabilities
+              from the AAIF document.  Allows capability-based
+              filtering without fetching the full definition.
+            </dd>
+            <dt>acpm_profile_url</dt>
+            <dd>
+              <bcp14>OPTIONAL</bcp14>.  URI of an ACPM (SC-014)
+              <xref target="SC-014"/> capability profile that further
+              describes what this agent offers.  Null if none
+              published.
+            </dd>
+          </dl>
+        </section>
+
+        <section anchor="lifecycle-fields" numbered="true" toc="default">
+          <name>Lifecycle Fields</name>
+          <dl newline="false" spacing="normal">
+            <dt>yanked</dt>
+            <dd>
+              <bcp14>OPTIONAL</bcp14>.  If true, this version has
+              been retracted.  Consumers <bcp14>MUST NOT</bcp14> use
+              yanked entries for new deployments.  Default: false.
+            </dd>
+            <dt>yank_reason</dt>
+            <dd>
+              <bcp14>OPTIONAL</bcp14>.  Human-readable reason for
+              yanking.  <bcp14>REQUIRED</bcp14> when yanked is true.
+            </dd>
+            <dt>license</dt>
+            <dd>
+              <bcp14>OPTIONAL</bcp14>.  SPDX license identifier for
+              the agent definition document itself.
+            </dd>
+          </dl>
+        </section>
+
+      </section>
+    </section>
+
+    <!-- ============================================================ -->
+    <section anchor="rest-api" numbered="true" toc="default">
+      <name>REST API</name>
+
+      <section anchor="api-conventions" numbered="true" toc="default">
+        <name>Conventions</name>
+        <t>
+          A registry server <bcp14>MUST</bcp14> expose the endpoints
+          defined in this section under a stable base URL, referred to
+          in this document as {server}.  All paths below are relative
+          to {server}/v1.
+        </t>
+        <t>
+          All request and response bodies are JSON (RFC 8259
+          <xref target="RFC8259"/>).  Requests that include a body
+          <bcp14>MUST</bcp14> send Content-Type: application/areg+json.
+          Responses <bcp14>MUST</bcp14> carry Content-Type:
+          application/areg+json.
+        </t>
+        <t>
+          All GET endpoints <bcp14>MUST</bcp14> be accessible without
+          authentication.  POST, PATCH, and DELETE endpoints
+          <bcp14>MUST</bcp14> require authentication.  The authentication
+          mechanism (Bearer token, API key, OAuth 2.0) is
+          registry-defined.  A registry <bcp14>MUST</bcp14> document
+          its authentication requirement.
+        </t>
+        <t>
+          All error responses use the following format:
+        </t>
+        <artwork name="" type="" align="left" alt=""><![CDATA[
+{ "error": "short_code", "detail": "human-readable text" }
+        ]]></artwork>
+        <t>
+          All registry endpoints <bcp14>MUST</bcp14> be served over
+          HTTPS (TLS 1.2 or higher).  Plain HTTP
+          <bcp14>MUST NOT</bcp14> be used.
+        </t>
+      </section>
+
+      <section anchor="api-list" numbered="true" toc="default">
+        <name>GET /v1/entries</name>
+        <t>
+          Returns a paginated list of registry entries.  Yanked entries
+          are excluded unless include_yanked=true is supplied.
+        </t>
+        <t>
+          Query parameters:
+        </t>
+        <dl newline="false" spacing="normal">
+          <dt>tag (repeatable)</dt>
+          <dd>
+            Include entries carrying any of the supplied tags (OR
+            logic).
+          </dd>
+          <dt>capability (repeatable)</dt>
+          <dd>
+            Include only entries whose required_capabilities array
+            contains all supplied values (AND logic).
+          </dd>
+          <dt>conformance_level</dt>
+          <dd>
+            Exact match against the conformance_level field.
+          </dd>
+          <dt>publisher_url</dt>
+          <dd>
+            Exact match against publisher.url.
+          </dd>
+          <dt>include_yanked</dt>
+          <dd>
+            If true, include yanked entries.  Default: false.
+          </dd>
+          <dt>page</dt>
+          <dd>
+            1-based page number.  Default: 1.
+          </dd>
+          <dt>per_page</dt>
+          <dd>
+            Results per page.  Default: 20.  Maximum: 100.
+          </dd>
+        </dl>
+        <t>
+          Response 200:
+        </t>
+        <artwork name="" type="" align="left" alt=""><![CDATA[
+{
+  "entries": [ /* array of registry entry objects */ ],
+  "total": 42,
+  "page": 1,
+  "per_page": 20
+}
+        ]]></artwork>
+      </section>
+
+      <section anchor="api-get-one" numbered="true" toc="default">
+        <name>GET /v1/entries/{registry_id}</name>
+        <t>
+          Returns a single registry entry identified by registry_id.
+        </t>
+        <t>
+          Response 200: the registry entry object.
+        </t>
+        <t>
+          Response 404: entry not found.
+        </t>
+      </section>
+
+      <section anchor="api-resolve" numbered="true" toc="default">
+        <name>GET /v1/resolve/{agent_id}</name>
+        <t>
+          Returns the latest non-yanked registry entry for the given
+          agent_id, where "latest" is determined by Semantic Version
+          ordering of agent_version (descending).
+        </t>
+        <t>
+          Response 200: the registry entry object.
+        </t>
+        <t>
+          Response 404: no non-yanked entry exists for this agent_id.
+        </t>
+      </section>
+
+      <section anchor="api-resolve-version" numbered="true" toc="default">
+        <name>GET /v1/resolve/{agent_id}/{version}</name>
+        <t>
+          Returns the registry entry for the specific
+          (agent_id, agent_version) pair.
+        </t>
+        <t>
+          Response 200: the registry entry object.
+        </t>
+        <t>
+          Response 404: no entry exists for this pair.
+        </t>
+        <t>
+          Response 410 Gone: the entry exists but is yanked.  The
+          response body <bcp14>MUST</bcp14> include the yank_reason.
+        </t>
+      </section>
+
+      <section anchor="api-publish" numbered="true" toc="default">
+        <name>POST /v1/entries</name>
+        <t>
+          Publishes a new registry entry.  The publisher
+          <bcp14>MUST</bcp14> supply all required fields except
+          registry_id, published_at, and updated_at, which the
+          registry assigns.
+        </t>
+        <t>
+          The registry <bcp14>MUST</bcp14> validate the submitted body
+          against the registry entry schema
+          <xref target="JSON-SCHEMA"/> before accepting it.  The
+          registry <bcp14>SHOULD</bcp14> verify that agent_id and
+          agent_version in the body match the AAIF document at aaif_url
+          at publish time.  If they do not match, the registry
+          <bcp14>MUST</bcp14> reject the request with 422.
+        </t>
+        <t>
+          Response 201: { "registry_id": "...", "published_at": "..." }
+        </t>
+        <t>
+          Response 400: schema validation failure.
+        </t>
+        <t>
+          Response 409: a non-yanked entry for this (agent_id,
+          agent_version) already exists.
+        </t>
+        <t>
+          Response 422: agent_id or agent_version mismatch with the
+          AAIF document at aaif_url.
+        </t>
+      </section>
+
+      <section anchor="api-patch" numbered="true" toc="default">
+        <name>PATCH /v1/entries/{registry_id}</name>
+        <t>
+          Updates mutable metadata on a non-yanked entry.  The
+          following fields <bcp14>MAY</bcp14> be updated: tags,
+          acpm_profile_url, publisher.contact.  The following fields
+          <bcp14>MUST NOT</bcp14> be changed via PATCH: agent_id,
+          agent_version, aaif_url, signature, publisher.name,
+          publisher.url, published_at.  The registry
+          <bcp14>MUST</bcp14> reject a PATCH that attempts to modify
+          an immutable field with 422.
+        </t>
+        <t>
+          Response 200: the updated registry entry object.
+        </t>
+        <t>
+          Response 403: requester does not own this entry.
+        </t>
+        <t>
+          Response 404: entry not found.
+        </t>
+        <t>
+          Response 409: entry is yanked.
+        </t>
+        <t>
+          Response 422: attempt to modify an immutable field.
+        </t>
+      </section>
+
+      <section anchor="api-yank" numbered="true" toc="default">
+        <name>DELETE /v1/entries/{registry_id}</name>
+        <t>
+          Marks an entry as yanked.  The entry is not removed.  The
+          yanked flag is set to true and the yank_reason is recorded.
+        </t>
+        <t>
+          The request body <bcp14>MUST</bcp14> include:
+          { "yank_reason": "string" }.
+        </t>
+        <t>
+          Response 200: the updated registry entry object with
+          yanked set to true.
+        </t>
+        <t>
+          Response 403: requester does not own this entry.
+        </t>
+        <t>
+          Response 404: entry not found.
+        </t>
+        <t>
+          Response 409: entry is already yanked.
+        </t>
+      </section>
+
+    </section>
+
+    <!-- ============================================================ -->
+    <section anchor="signing-model" numbered="true" toc="default">
+      <name>Signing Model</name>
+      <t>
+        The signature field attests that the AAIF document at aaif_url
+        has not been modified since the publisher signed it.  A
+        registry entry without a signature provides no cryptographic
+        assurance of document integrity.
+      </t>
+
+      <section anchor="signing-publisher" numbered="true" toc="default">
+        <name>Signing (Publisher)</name>
+        <t>
+          To produce a valid signature, a publisher:
+        </t>
+        <ol spacing="normal">
+          <li>
+            Fetches the AAIF document from aaif_url.
+          </li>
+          <li>
+            Produces the canonical JSON representation of the document
+            using RFC 8785 (JSON Canonicalization Scheme)
+            <xref target="RFC8785"/>.
+          </li>
+          <li>
+            Produces a JWS (RFC 7515 <xref target="RFC7515"/>) using
+            detached payload mode: the canonical JSON bytes are the
+            payload but are not included in the JWS serialization.
+            The compact serialization form is used.
+          </li>
+          <li>
+            Uses the algorithm ES256 (ECDSA with P-256 and SHA-256,
+            RFC 7518 <xref target="RFC7518"/>).  RS256 (RSASSA-PKCS1
+            with SHA-256) <bcp14>SHOULD</bcp14> also be supported by
+            registry implementations for interoperability.
+          </li>
+          <li>
+            Sets the signature field in the registry entry to the
+            compact JWS string.
+          </li>
+          <li>
+            Publishes the corresponding public key at
+            publisher.public_key_url as a JWK Set (RFC 7517
+            <xref target="RFC7517"/>) with Content-Type
+            application/json, or a PEM file with Content-Type
+            text/plain.
+          </li>
+        </ol>
+      </section>
+
+      <section anchor="signing-consumer" numbered="true" toc="default">
+        <name>Verification (Consumer)</name>
+        <t>
+          To verify a signature, a consumer:
+        </t>
+        <ol spacing="normal">
+          <li>
+            Retrieves the registry entry.  If signature is null, the
+            entry is unsigned; the consumer applies its own policy
+            for unsigned entries.
+          </li>
+          <li>
+            Fetches the AAIF document from aaif_url.
+          </li>
+          <li>
+            Produces canonical JSON of the fetched document using
+            RFC 8785 <xref target="RFC8785"/>.
+          </li>
+          <li>
+            Fetches the JWK Set or PEM from publisher.public_key_url.
+          </li>
+          <li>
+            Verifies the compact JWS against the canonical JSON bytes
+            using the public key.
+          </li>
+          <li>
+            If verification fails, treats the AAIF document as
+            untrusted regardless of other metadata in the entry.
+          </li>
+        </ol>
+      </section>
+
+      <section anchor="signing-constraints" numbered="true" toc="default">
+        <name>Normative Constraints</name>
+        <t>
+          A registry <bcp14>MUST NOT</bcp14> modify aaif_url or
+          signature after an entry is published.
+        </t>
+        <t>
+          A consumer that requires signed entries
+          <bcp14>MUST</bcp14> reject entries where signature is null.
+        </t>
+        <t>
+          A consumer <bcp14>MUST NOT</bcp14> cache the public key
+          indefinitely.  It <bcp14>SHOULD</bcp14> re-fetch from
+          publisher.public_key_url at an interval appropriate to its
+          security policy.
+        </t>
+      </section>
+    </section>
+
+    <!-- ============================================================ -->
+    <section anchor="versioning-yanking" numbered="true" toc="default">
+      <name>Versioning and Yanking</name>
+
+      <section anchor="versioning" numbered="true" toc="default">
+        <name>Versioning</name>
+        <t>
+          A registry entry identifies exactly one (agent_id,
+          agent_version) pair.  When an agent definition is updated, a
+          new entry <bcp14>MUST</bcp14> be published with the new
+          agent_version value.  The new entry receives a new
+          registry_id.  The previous entry remains in the registry
+          unchanged.
+        </t>
+        <t>
+          The GET /v1/resolve/{agent_id} endpoint returns the latest
+          non-yanked entry, where "latest" is determined by Semantic
+          Version ordering of agent_version descending.
+        </t>
+      </section>
+
+      <section anchor="yanking" numbered="true" toc="default">
+        <name>Yanking</name>
+        <t>
+          Yanking retracts a specific (agent_id, agent_version) entry.
+          Yanking is <bcp14>REQUIRED</bcp14> when a security
+          vulnerability is found in the agent definition, when the
+          document at aaif_url has been changed in a way that
+          invalidates the entry, or when the publisher otherwise
+          withdraws the version.
+        </t>
+        <t>
+          Yanking <bcp14>MUST NOT</bcp14> be reversed by setting
+          yanked back to false.  If a version was inadvertently yanked,
+          the publisher <bcp14>SHOULD</bcp14> re-publish it under a
+          new agent_version with a corrective note.
+        </t>
+        <t>
+          A registry <bcp14>MUST</bcp14> preserve yanked entries.
+          Consumers who hold a reference to a specific registry_id
+          <bcp14>MUST</bcp14> be able to retrieve it, including its
+          yank_reason, for audit purposes.
+        </t>
+        <t>
+          Consumers that cache registry entries locally
+          <bcp14>MUST</bcp14> periodically re-check the live entry to
+          detect yanking.
+        </t>
+      </section>
+    </section>
+
+    <!-- ============================================================ -->
+    <section anchor="relationship" numbered="true" toc="default">
+      <name>Relationship to AAIF and ACPM</name>
+      <t>
+        AREG is designed to compose with SC-006 (AAIF) and SC-014
+        (ACPM) but has no hard dependency on either.
+      </t>
+      <t>
+        SC-006 AAIF <xref target="SC-006"/> defines the content of the
+        agent definition document that aaif_url resolves to.  A
+        registry entry carries agent_id and required_capabilities from
+        the AAIF document to enable search without fetching every
+        definition.  Using AREG without AAIF is possible; a registry
+        entry's aaif_url may point to any agent definition format the
+        publisher chooses.
+      </t>
+      <t>
+        SC-014 ACPM <xref target="SC-014"/> provides a richer
+        capability profile that acpm_profile_url optionally points to.
+        ACPM profiles give consumers capability, trust, cost, and SLA
+        information beyond the minimal conformance_level and
+        required_capabilities in the registry entry.  Neither AREG nor
+        ACPM requires the other.
+      </t>
+      <t>
+        The A2A Protocol <xref target="A2A"/> defines Agent Cards that
+        an agent server exposes at a well-known URL to advertise its
+        runtime capabilities.  Agent Cards are designed for runtime
+        service discovery, while AREG registry entries are designed for
+        catalog discovery prior to connection.  The two are
+        complementary: an AREG entry may carry the aaif_url of an AAIF
+        document that in turn references an A2A Agent Card endpoint.
+      </t>
+      <t>
+        The Model Context Protocol roadmap
+        <xref target="MCP-ROADMAP"/> describes a planned Server Cards
+        effort for MCP server discovery via well-known URLs.  An AREG
+        registry entry for an MCP-based agent may carry an
+        acpm_profile_url pointing to an ACPM profile that captures the
+        server's MCP capabilities, enabling the two discovery
+        mechanisms to coexist.
+      </t>
+    </section>
+
+    <!-- ============================================================ -->
+    <section anchor="conformance" numbered="true" toc="default">
+      <name>Conformance</name>
+      <t>
+        Conformance levels apply to software that implements an AREG
+        registry server.  Levels are cumulative: a server claiming
+        Full satisfies every requirement of Discover through Signed.
+        Conformance is self-certified; there is no central certifying
+        authority.
+      </t>
+      <dl newline="false" spacing="normal">
+        <dt>Discover</dt>
+        <dd>
+          Implements GET /v1/entries, GET /v1/entries/{id},
+          GET /v1/resolve/{agent_id}, and
+          GET /v1/resolve/{agent_id}/{version}.  Validates entries
+          against the registry entry schema.  Returns the correct
+          Content-Type.  All endpoints accessible without
+          authentication.
+        </dd>
+        <dt>Publish</dt>
+        <dd>
+          Discover, plus POST /v1/entries, PATCH /v1/entries/{id},
+          and DELETE /v1/entries/{id}.  Enforces authentication on
+          mutating endpoints.  Assigns registry_id and published_at
+          server-side.
+        </dd>
+        <dt>Signed</dt>
+        <dd>
+          Publish, plus verifies signature on POST when signature is
+          non-null.  Rejects entries whose signature does not verify
+          against the key at publisher.public_key_url.
+        </dd>
+        <dt>Full</dt>
+        <dd>
+          Signed, plus supports all query parameters for
+          GET /v1/entries (tag, capability, conformance_level,
+          publisher_url, include_yanked, page, per_page) and returns
+          correct pagination metadata (total, page, per_page).
+        </dd>
+      </dl>
+    </section>
+
+    <!-- ============================================================ -->
+    <section anchor="security" numbered="true" toc="default">
+      <name>Security Considerations</name>
+
+      <section anchor="sec-unsigned" numbered="true" toc="default">
+        <name>Unsigned Entries</name>
+        <t>
+          A registry entry without a signature provides no
+          cryptographic assurance that the AAIF document at aaif_url
+          is authentic or unmodified.  Consumers operating in
+          high-trust environments <bcp14>MUST</bcp14> require signature
+          to be non-null and successfully verified before deploying or
+          executing an agent based on the entry.  Unsigned entries are
+          appropriate for development and low-trust contexts.
+        </t>
+      </section>
+
+      <section anchor="sec-impersonation" numbered="true" toc="default">
+        <name>Publisher Impersonation</name>
+        <t>
+          AREG does not define a mechanism for verifying the identity
+          of a publisher beyond what the registry's own authentication
+          provides.  A compromised publisher account can publish
+          malicious entries.  Registries <bcp14>SHOULD</bcp14>
+          implement rate limiting, review workflows, and abuse
+          reporting to reduce this risk.
+        </t>
+      </section>
+
+      <section anchor="sec-mutation" numbered="true" toc="default">
+        <name>URL Redirection and Document Mutation</name>
+        <t>
+          A publisher who controls the server at aaif_url can
+          silently substitute a different document after the entry is
+          published.  The signature field mitigates this: a consumer
+          who verifies the signature detects any change to the
+          canonical JSON.  Registries that do not require signatures
+          <bcp14>SHOULD</bcp14> document this risk prominently.
+        </t>
+      </section>
+
+      <section anchor="sec-key-revocation" numbered="true" toc="default">
+        <name>Key Revocation</name>
+        <t>
+          AREG does not define a key revocation mechanism beyond the
+          publisher updating the JWK Set at publisher.public_key_url.
+          A consumer that caches public keys indefinitely is vulnerable
+          to continued reliance on a compromised key.  Consumers
+          <bcp14>MUST</bcp14> re-fetch keys at an appropriate interval
+          and <bcp14>MUST NOT</bcp14> trust a signature verified
+          against a key that has been removed from the publisher's
+          JWK Set.
+        </t>
+      </section>
+
+      <section anchor="sec-yanked" numbered="true" toc="default">
+        <name>Yanked Entry Misuse</name>
+        <t>
+          A consumer that caches registry entries locally
+          <bcp14>MUST</bcp14> periodically re-check the live entry to
+          detect yanking.  Using a yanked entry for a new deployment
+          after the yanked flag is set is a misuse of the registry.
+          Consumers <bcp14>SHOULD</bcp14> treat a 410 Gone response
+          from GET /v1/resolve/{agent_id}/{version} as an immediate
+          signal to halt any pending deployment of that version.
+        </t>
+      </section>
+
+    </section>
+
+    <!-- ============================================================ -->
+    <section anchor="iana" numbered="true" toc="default">
+      <name>IANA Considerations</name>
+      <t>
+        This document requests registration of the following media
+        type.
+      </t>
+      <dl newline="true" spacing="normal">
+        <dt>Type name</dt>
+        <dd>application</dd>
+        <dt>Subtype name</dt>
+        <dd>areg+json</dd>
+        <dt>Required parameters</dt>
+        <dd>None</dd>
+        <dt>Optional parameters</dt>
+        <dd>None</dd>
+        <dt>Encoding considerations</dt>
+        <dd>Binary (UTF-8 encoded JSON)</dd>
+        <dt>Security considerations</dt>
+        <dd>
+          See <xref target="security"/> of this document.
+        </dd>
+        <dt>Interoperability considerations</dt>
+        <dd>
+          Instances MUST validate against the AREG registry entry
+          schema version 0.1.0 or later.
+        </dd>
+        <dt>Published specification</dt>
+        <dd>This document.</dd>
+        <dt>Applications that use this media type</dt>
+        <dd>AREG registry clients and servers.</dd>
+        <dt>Additional information</dt>
+        <dd>
+          File extension: .areg.json.  Magic number: none.
+        </dd>
+        <dt>Intended usage</dt>
+        <dd>COMMON</dd>
+        <dt>Restrictions on usage</dt>
+        <dd>None</dd>
+        <dt>Author</dt>
+        <dd>Bob van Bussel, bob@observalytics.com</dd>
+        <dt>Change controller</dt>
+        <dd>Schema Commons (schemacommons.org)</dd>
+      </dl>
+    </section>
+
+  </middle>
+
+  <back>
+
+    <references>
+      <name>References</name>
+
+      <references>
+        <name>Normative References</name>
+
+        <reference anchor="RFC2119"
+                   target="https://www.rfc-editor.org/rfc/rfc2119">
+          <front>
+            <title>Key words for use in RFCs to Indicate Requirement
+            Levels</title>
+            <author initials="S." surname="Bradner" fullname="S. Bradner">
+              <organization/>
+            </author>
+            <date year="1997" month="March"/>
+          </front>
+          <seriesInfo name="BCP" value="14"/>
+          <seriesInfo name="RFC" value="2119"/>
+          <seriesInfo name="DOI" value="10.17487/RFC2119"/>
+        </reference>
+
+        <reference anchor="RFC8174"
+                   target="https://www.rfc-editor.org/rfc/rfc8174">
+          <front>
+            <title>Ambiguity of Uppercase vs Lowercase in RFC 2119
+            Key Words</title>
+            <author initials="B." surname="Leiba" fullname="B. Leiba">
+              <organization/>
+            </author>
+            <date year="2017" month="May"/>
+          </front>
+          <seriesInfo name="BCP" value="14"/>
+          <seriesInfo name="RFC" value="8174"/>
+          <seriesInfo name="DOI" value="10.17487/RFC8174"/>
+        </reference>
+
+        <reference anchor="RFC7515"
+                   target="https://www.rfc-editor.org/rfc/rfc7515">
+          <front>
+            <title>JSON Web Signature (JWS)</title>
+            <author initials="M." surname="Jones" fullname="M. Jones">
+              <organization/>
+            </author>
+            <author initials="J." surname="Bradley" fullname="J. Bradley">
+              <organization/>
+            </author>
+            <author initials="N." surname="Sakimura"
+                    fullname="N. Sakimura">
+              <organization/>
+            </author>
+            <date year="2015" month="May"/>
+          </front>
+          <seriesInfo name="RFC" value="7515"/>
+          <seriesInfo name="DOI" value="10.17487/RFC7515"/>
+        </reference>
+
+        <reference anchor="RFC7517"
+                   target="https://www.rfc-editor.org/rfc/rfc7517">
+          <front>
+            <title>JSON Web Key (JWK)</title>
+            <author initials="M." surname="Jones" fullname="M. Jones">
+              <organization/>
+            </author>
+            <date year="2015" month="May"/>
+          </front>
+          <seriesInfo name="RFC" value="7517"/>
+          <seriesInfo name="DOI" value="10.17487/RFC7517"/>
+        </reference>
+
+        <reference anchor="RFC7518"
+                   target="https://www.rfc-editor.org/rfc/rfc7518">
+          <front>
+            <title>JSON Web Algorithms (JWA)</title>
+            <author initials="M." surname="Jones" fullname="M. Jones">
+              <organization/>
+            </author>
+            <date year="2015" month="May"/>
+          </front>
+          <seriesInfo name="RFC" value="7518"/>
+          <seriesInfo name="DOI" value="10.17487/RFC7518"/>
+        </reference>
+
+        <reference anchor="RFC8259"
+                   target="https://www.rfc-editor.org/rfc/rfc8259">
+          <front>
+            <title>The JavaScript Object Notation (JSON) Data
+            Interchange Format</title>
+            <author initials="T." surname="Bray" fullname="T. Bray">
+              <organization/>
+            </author>
+            <date year="2017" month="December"/>
+          </front>
+          <seriesInfo name="STD" value="90"/>
+          <seriesInfo name="RFC" value="8259"/>
+          <seriesInfo name="DOI" value="10.17487/RFC8259"/>
+        </reference>
+
+        <reference anchor="RFC8785"
+                   target="https://www.rfc-editor.org/rfc/rfc8785">
+          <front>
+            <title>JSON Canonicalization Scheme (JCS)</title>
+            <author initials="A." surname="Rundgren"
+                    fullname="A. Rundgren">
+              <organization/>
+            </author>
+            <author initials="B." surname="Jordan" fullname="B. Jordan">
+              <organization/>
+            </author>
+            <author initials="S." surname="Erdtman"
+                    fullname="S. Erdtman">
+              <organization/>
+            </author>
+            <date year="2020" month="June"/>
+          </front>
+          <seriesInfo name="RFC" value="8785"/>
+          <seriesInfo name="DOI" value="10.17487/RFC8785"/>
+        </reference>
+
+        <reference anchor="RFC9562"
+                   target="https://www.rfc-editor.org/rfc/rfc9562">
+          <front>
+            <title>Universally Unique IDentifiers (UUIDs)</title>
+            <author initials="K." surname="Davis" fullname="K. Davis">
+              <organization/>
+            </author>
+            <author initials="B." surname="Peabody"
+                    fullname="B. Peabody">
+              <organization/>
+            </author>
+            <author initials="P." surname="Leach" fullname="P. Leach">
+              <organization/>
+            </author>
+            <date year="2024" month="May"/>
+          </front>
+          <seriesInfo name="RFC" value="9562"/>
+          <seriesInfo name="DOI" value="10.17487/RFC9562"/>
+        </reference>
+
+        <reference anchor="JSON-SCHEMA"
+                   target="https://json-schema.org/draft/2020-12">
+          <front>
+            <title>JSON Schema: A Media Type for Describing JSON
+            Documents</title>
+            <author initials="A." surname="Wright" fullname="A. Wright">
+              <organization/>
+            </author>
+            <author initials="H." surname="Andrews"
+                    fullname="H. Andrews">
+              <organization/>
+            </author>
+            <date year="2022"/>
+          </front>
+        </reference>
+
+      </references>
+
+      <references>
+        <name>Informative References</name>
+
+        <reference anchor="SC-006"
+                   target="https://github.com/Observalytics-SL/aaif/">
+          <front>
+            <title>Autonomous Agent Interchange Format (AAIF)</title>
+            <author>
+              <organization>Schema Commons</organization>
+            </author>
+            <date year="2026"/>
+          </front>
+        </reference>
+
+        <reference anchor="SC-014"
+                   target="https://github.com/Observalytics-SL/acpm/">
+          <front>
+            <title>Agent Capability and Profile Model (ACPM)</title>
+            <author>
+              <organization>Schema Commons</organization>
+            </author>
+            <date year="2026"/>
+          </front>
+        </reference>
+
+        <reference anchor="A2A"
+                   target="https://github.com/a2aproject/A2A">
+          <front>
+            <title>Agent2Agent Protocol</title>
+            <author>
+              <organization>Linux Foundation (Agent2Agent
+              Project)</organization>
+            </author>
+            <date year="2025"/>
+          </front>
+        </reference>
+
+        <reference anchor="MCP-ROADMAP">
+          <front>
+            <title>Model Context Protocol Development Roadmap</title>
+            <author>
+              <organization>Model Context Protocol
+              contributors</organization>
+            </author>
+            <date year="2026" month="March" day="5"/>
+          </front>
+          <format type="HTML"
+            target="https://modelcontextprotocol.io/development/roadmap"
+          />
+        </reference>
+
+      </references>
+    </references>
+
+  </back>
+</rfc>

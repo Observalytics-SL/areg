@@ -1,0 +1,26 @@
+{
+  "@context": {
+    "sc":   "https://schemacommons.org/SC-013/",
+    "areg": "https://schemacommons.org/SC-013/vocab#",
+    "schema": "https://schema.org/",
+    "xsd":  "http://www.w3.org/2001/XMLSchema#",
+
+    "sc_standard":           "areg:sc_standard",
+    "sc_version":            "areg:sc_version",
+    "registry_id":           { "@id": "areg:registry_id",   "@type": "xsd:string" },
+    "agent_id":              { "@id": "areg:agent_id",       "@type": "xsd:string" },
+    "agent_version":         "areg:agent_version",
+    "published_at":          { "@id": "schema:datePublished","@type": "xsd:dateTime" },
+    "updated_at":            { "@id": "schema:dateModified", "@type": "xsd:dateTime" },
+    "publisher":             "schema:publisher",
+    "aaif_url":              { "@id": "areg:aaif_url",       "@type": "@id" },
+    "acpm_profile_url":      { "@id": "areg:acpm_profile_url","@type": "@id" },
+    "tags":                  "schema:keywords",
+    "conformance_level":     "areg:conformance_level",
+    "required_capabilities": "areg:required_capabilities",
+    "signature":             "areg:signature",
+    "yanked":                "areg:yanked",
+    "yank_reason":           "areg:yank_reason",
+    "license":               "schema:license"
+  }
+}

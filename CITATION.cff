@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: "If you use or reference AREG, please cite it as below."
+title: "Agent Registry (AREG) — Schema Commons SC-013"
+version: 0.1.0
+date-released: 2026-06-25
+authors:
+  - family-names: van Bussel
+    given-names: Bob
+    affiliation: Observalytics SL
+    email: bob@observalytics.com
+license: CC-BY-4.0
+repository-code: https://github.com/Observalytics-SL/areg
+url: https://schemacommons.org/SC-013
+doi: "10.5281/zenodo.20845322"
+identifiers:
+  - type: other
+    value: "SC-013"
+    description: "Schema Commons standard identifier."
+  - type: doi
+    value: "10.5281/zenodo.20845322"
+    description: "Zenodo archived release DOI."
+abstract: >
+  The Agent Registry (AREG) is a Schema Commons open standard defining a
+  machine-readable registry entry format and REST API for publishing, discovering,
+  and resolving AAIF-format AI agent definitions. A registry entry records the
+  agent's stable identity, version, publisher, resolution URL, capability summary,
+  and optional signing information. AREG is the discovery layer of the Schema
+  Commons agent stack, complementing SC-006 AAIF (agent definition portability)
+  and SC-014 ACPM (capability profiles).
+keywords:
+  - AI agents
+  - agent registry
+  - agent discovery
+  - multi-agent systems
+  - JSON Schema
+  - open standard
+  - Schema Commons
