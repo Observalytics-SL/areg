@@ -4,8 +4,8 @@
 
 Network Working Group                                      B. van Bussel
 Internet-Draft                                          Observalytics SL
-Intended status: Informational                              25 June 2026
-Expires: 27 December 2026
+Intended status: Informational                             2 August 2026
+Expires: 3 February 2027
 
 
                          Agent Registry (AREG)
@@ -46,16 +46,16 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 27 December 2026.
+   This Internet-Draft will expire on 3 February 2027.
 
 
 
 
 
 
-van Bussel              Expires 27 December 2026                [Page 1]
+van Bussel               Expires 3 February 2027                [Page 1]
 
-Internet-Draft                    AREG                         June 2026
+Internet-Draft                    AREG                       August 2026
 
 
 Copyright Notice
@@ -109,9 +109,9 @@ Table of Contents
 
 
 
-van Bussel              Expires 27 December 2026                [Page 2]
+van Bussel               Expires 3 February 2027                [Page 2]
 
-Internet-Draft                    AREG                         June 2026
+Internet-Draft                    AREG                       August 2026
 
 
      10.4.  Key Revocation . . . . . . . . . . . . . . . . . . . . .  15
@@ -165,9 +165,9 @@ Internet-Draft                    AREG                         June 2026
 
 
 
-van Bussel              Expires 27 December 2026                [Page 3]
+van Bussel               Expires 3 February 2027                [Page 3]
 
-Internet-Draft                    AREG                         June 2026
+Internet-Draft                    AREG                       August 2026
 
 
 1.2.  Scope
@@ -221,9 +221,9 @@ Internet-Draft                    AREG                         June 2026
 
 
 
-van Bussel              Expires 27 December 2026                [Page 4]
+van Bussel               Expires 3 February 2027                [Page 4]
 
-Internet-Draft                    AREG                         June 2026
+Internet-Draft                    AREG                       August 2026
 
 
 3.  Design Principles
@@ -277,9 +277,9 @@ Internet-Draft                    AREG                         June 2026
 
 
 
-van Bussel              Expires 27 December 2026                [Page 5]
+van Bussel               Expires 3 February 2027                [Page 5]
 
-Internet-Draft                    AREG                         June 2026
+Internet-Draft                    AREG                       August 2026
 
 
    RegistryEntry (root)
@@ -333,9 +333,9 @@ Internet-Draft                    AREG                         June 2026
 
 
 
-van Bussel              Expires 27 December 2026                [Page 6]
+van Bussel               Expires 3 February 2027                [Page 6]
 
-Internet-Draft                    AREG                         June 2026
+Internet-Draft                    AREG                       August 2026
 
 
       metadata update.  Set by the registry on PATCH.
@@ -389,9 +389,9 @@ Internet-Draft                    AREG                         June 2026
 
 
 
-van Bussel              Expires 27 December 2026                [Page 7]
+van Bussel               Expires 3 February 2027                [Page 7]
 
-Internet-Draft                    AREG                         June 2026
+Internet-Draft                    AREG                       August 2026
 
 
 4.2.5.  Lifecycle Fields
@@ -445,9 +445,9 @@ Internet-Draft                    AREG                         June 2026
 
 
 
-van Bussel              Expires 27 December 2026                [Page 8]
+van Bussel               Expires 3 February 2027                [Page 8]
 
-Internet-Draft                    AREG                         June 2026
+Internet-Draft                    AREG                       August 2026
 
 
       required_capabilities array contains all supplied values (AND
@@ -501,9 +501,9 @@ Internet-Draft                    AREG                         June 2026
 
 
 
-van Bussel              Expires 27 December 2026                [Page 9]
+van Bussel               Expires 3 February 2027                [Page 9]
 
-Internet-Draft                    AREG                         June 2026
+Internet-Draft                    AREG                       August 2026
 
 
    Response 410 Gone: the entry exists but is yanked.  The response body
@@ -557,9 +557,9 @@ Internet-Draft                    AREG                         June 2026
 
 
 
-van Bussel              Expires 27 December 2026               [Page 10]
+van Bussel               Expires 3 February 2027               [Page 10]
 
-Internet-Draft                    AREG                         June 2026
+Internet-Draft                    AREG                       August 2026
 
 
    The request body MUST include: { "yank_reason": "string" }.
@@ -613,9 +613,9 @@ Internet-Draft                    AREG                         June 2026
 
 
 
-van Bussel              Expires 27 December 2026               [Page 11]
+van Bussel               Expires 3 February 2027               [Page 11]
 
-Internet-Draft                    AREG                         June 2026
+Internet-Draft                    AREG                       August 2026
 
 
    1.  Retrieves the registry entry.  If signature is null, the entry is
@@ -669,9 +669,9 @@ Internet-Draft                    AREG                         June 2026
 
 
 
-van Bussel              Expires 27 December 2026               [Page 12]
+van Bussel               Expires 3 February 2027               [Page 12]
 
-Internet-Draft                    AREG                         June 2026
+Internet-Draft                    AREG                       August 2026
 
 
 7.2.  Yanking
@@ -725,9 +725,9 @@ Internet-Draft                    AREG                         June 2026
 
 
 
-van Bussel              Expires 27 December 2026               [Page 13]
+van Bussel               Expires 3 February 2027               [Page 13]
 
-Internet-Draft                    AREG                         June 2026
+Internet-Draft                    AREG                       August 2026
 
 
    acpm_profile_url pointing to an ACPM profile that captures the
@@ -781,9 +781,9 @@ Internet-Draft                    AREG                         June 2026
 
 
 
-van Bussel              Expires 27 December 2026               [Page 14]
+van Bussel               Expires 3 February 2027               [Page 14]
 
-Internet-Draft                    AREG                         June 2026
+Internet-Draft                    AREG                       August 2026
 
 
 10.3.  URL Redirection and Document Mutation
@@ -837,9 +837,9 @@ Internet-Draft                    AREG                         June 2026
 
 
 
-van Bussel              Expires 27 December 2026               [Page 15]
+van Bussel               Expires 3 February 2027               [Page 15]
 
-Internet-Draft                    AREG                         June 2026
+Internet-Draft                    AREG                       August 2026
 
 
    Interoperability considerations
@@ -893,9 +893,9 @@ Internet-Draft                    AREG                         June 2026
 
 
 
-van Bussel              Expires 27 December 2026               [Page 16]
+van Bussel               Expires 3 February 2027               [Page 16]
 
-Internet-Draft                    AREG                         June 2026
+Internet-Draft                    AREG                       August 2026
 
 
    [RFC7518]  Jones, M., "JSON Web Algorithms (JWA)", RFC 7518,
@@ -949,4 +949,4 @@ Author's Address
 
 
 
-van Bussel              Expires 27 December 2026               [Page 17]
+van Bussel               Expires 3 February 2027               [Page 17]
