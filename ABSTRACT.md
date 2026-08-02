@@ -62,7 +62,7 @@ AI agents · agent registry · agent discovery · agent portability · digital s
 ```bibtex
 @techreport{areg-sc013-v0,
   title     = {Agent Registry (AREG) — SC-013 v0.1.0},
-  author    = {{Schema Commons Working Group}},
+  author    = {van Bussel, Bob},
   year      = {2026},
   month     = {June},
   type      = {Proposed Standard},
@@ -76,6 +76,6 @@ AI agents · agent registry · agent discovery · agent portability · digital s
 
 ## Contact
 
-- **Issues and proposals:** https://github.com/Observalytics-SL/Frameworks/issues
+- **Issues and proposals:** https://github.com/Observalytics-SL/areg/issues
 - **Working group:** See CONTRIBUTING.md in the repository
 - **General enquiries:** hello@observalytics.com *(forthcoming)*
