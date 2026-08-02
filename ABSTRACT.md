@@ -78,4 +78,4 @@ AI agents · agent registry · agent discovery · agent portability · digital s
 
 - **Issues and proposals:** https://github.com/Observalytics-SL/areg/issues
 - **Working group:** See CONTRIBUTING.md in the repository
-- **General enquiries:** hello@observalytics.com *(forthcoming)*
+- **General enquiries:** general@observalytics.com
