@@ -220,7 +220,7 @@ No such deployment exists today. AREG v0.1.0 is a **Proposed** standard with no 
 
 ### 8.2 Known Limitations
 
-**No reference server implementation.** Unlike AAIF, which ships a Python reference toolchain, AREG currently ships only a document-level validator. There is no reference implementation of the REST API in §E to run, fork, or test a conforming client against — a priority gap noted in PUBLISHING.md and CONFORMANCE.md.
+**No reference server implementation.** Unlike AAIF, which ships a Python reference toolchain, AREG currently ships only a document-level validator. There is no reference implementation of the REST API in §E to run, fork, or test a conforming client against — a priority gap noted in CONFORMANCE.md.
 
 **Federation is unaddressed.** AREG defines no mechanism for querying multiple registries as if they were one, or for a registry to mirror or federate entries from another. §N (FAQ) notes this explicitly: "Future versions of this specification may define a cross-registry federation protocol." Until then, a consumer that wants comprehensive coverage must know which registries to query and merge results itself.
 
