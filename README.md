@@ -48,6 +48,10 @@ This is an early-stage standard with no external adopters yet. If you implement 
 | File | Description |
 |------|-------------|
 | [SPECIFICATION.md](SPECIFICATION.md) | Full specification: registry entry schema, REST API, signing model, discovery, versioning |
+| [ABSTRACT.md](ABSTRACT.md) | Structured abstract for registry submission, IETF I-D, and citation |
+| [CONFORMANCE.md](CONFORMANCE.md) | Registry-implementation conformance levels and self-certification |
+| [PUBLISHING.md](PUBLISHING.md) | Paths to DOI, arXiv, IETF Internet-Draft, and W3C Community Group |
+| [WHITEPAPER.md](WHITEPAPER.md) | Publication essay — the case for a standard agent registry and readiness assessment |
 | [schema/registry-entry.schema.json](schema/registry-entry.schema.json) | JSON Schema 2020-12 for a registry entry document |
 | [context.jsonld](context.jsonld) | JSON-LD context mapping AREG terms to semantic URIs |
 | [examples/invoice-chaser-entry.json](examples/invoice-chaser-entry.json) | Registry entry for the SC-006 Invoice Chaser reference agent |
